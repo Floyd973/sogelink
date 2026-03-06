@@ -1,5 +1,4 @@
-11,869 clients"""
-Sogelink — Commercial Intelligence Dashboard
+"""Sogelink — Commercial Intelligence Dashboard
 =============================================
 Two tabs: Metrics + Réassignation
 Run: streamlit run app.py
