@@ -1,4 +1,4 @@
-"""
+11,869 clients"""
 Sogelink — Commercial Intelligence Dashboard
 =============================================
 Two tabs: Metrics + Réassignation
@@ -21,6 +21,38 @@ st.markdown("""
     div[data-testid="stMetricValue"] { font-size:1.5rem; color:#e2e8f0 !important; }
     div[data-testid="stMetricLabel"] { color:#94a3b8 !important; }
     div[data-testid="stMetricDelta"] { font-size:0.78rem; }
+
+    /* ── Tabs — sélecteurs larges pour compatibilité toutes versions ── */
+    button[data-baseweb="tab"] {
+        background-color: #2d3748 !important;
+        color: #ffffff !important;
+        font-size: 1rem !important;
+        font-weight: 700 !important;
+        padding: 10px 24px !important;
+        border-radius: 8px 8px 0 0 !important;
+        border: 1px solid #4a5568 !important;
+        margin-right: 4px !important;
+    }
+    button[data-baseweb="tab"]:hover {
+        background-color: #4a5568 !important;
+        color: #ffffff !important;
+    }
+    button[data-baseweb="tab"][aria-selected="true"] {
+        background-color: #2F5496 !important;
+        color: #ffffff !important;
+        border-color: #2F5496 !important;
+    }
+    div[data-baseweb="tab-list"] {
+        background-color: #1a202c !important;
+        border-bottom: 2px solid #2F5496 !important;
+        padding: 6px 6px 0 6px !important;
+        border-radius: 8px 8px 0 0 !important;
+    }
+    div[data-baseweb="tab-highlight"] {
+        background-color: #2F5496 !important;
+        height: 3px !important;
+    }
+    div[data-baseweb="tab-border"] { display: none !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -32,103 +64,78 @@ MAX_ACT = 1410
 CHURN = 0.03
 NRR = 1.20
 
-ORG_RAW = """Thomas CAUWE;Private - SMB D&E Manager;Private
+@st.cache_data
+def parse_org():
+    """Load new org from org_cible.xlsx. Falls back to hardcoded if file not found."""
+    try:
+        org = pd.read_excel('./org_cible.xlsx')
+        org.columns = ['AM_Name', 'Role', 'Segment']
+        org['AM_Name'] = org['AM_Name'].str.strip()
+        org['Role'] = org['Role'].str.strip()
+        org['Segment'] = org['Segment'].str.strip()
+    except Exception:
+        # Fallback hardcoded
+        import io as _io
+        _raw = """Thomas CAUWE;Private - SMB D&E Manager;Private
 Beatrice DEMONT;Private - SMB D&E Contractors Account Manager;Private
-Emmanuelle MORILLE TOUBLANC;Private - SMB D&E Contractors Account Manager;Private
 Cecile RIAHI;Private - SMB D&E Contractors Account Manager;Private
-Zohra SABER;Private - SMB D&E Contractors Account Manager;Private
-Cecile CHERHAL;Private - SMB D&E Contractors Account Manager;Private
-Marie MAHEO;Private - SMB D&E Contractors Account Manager;Private
 Patricia BIZIEN;Private - SMB D&E Surveyors & Design Offices Account Manager;Private
-Marie-France DURAND;Private - SMB D&E Surveyors & Design Offices Account Manager;Private
 Karine ROUE;Private - SMB D&E Surveyors & Design Offices Account Manager;Private
 Aurelie SAVIDAN;Private - SMB D&E Surveyors & Design Offices Account Manager;Private
 Virginie VESCHI;Private - SMB CBYD Manager;Private
-Zahia BENMANSOUR;Private - SMB CBYD Account Manager;Private
-Cloe BIA;Private - SMB CBYD Account Manager;Private
-Florence BARJON;Private - SMB CBYD Account Manager;Private
 Arnaud CERESA;Private - SMB CBYD Account Manager;Private
-Abderrahmen BENALI;Private - SMB CBYD Account Manager;Private
-Fares Hamlat;Private - SMB CBYD Account Manager;Private
 Albin HUGUES;Private - SMB CBYD Account Manager;Private
 Amandine LANNIER;Private - SMB CBYD Account Manager;Private
-Sebastien LOPEZ;Private - SMB CBYD Account Manager;Private
-Lea PITINZANO;Private - SMB CBYD Account Manager;Private
-Elodie SAINTE-MARIE;Private - SMB CBYD Account Manager;Private
-Mathias ALFANO;Private - SMB CBYD Account Manager;Private
-Quentin TROJANI;Private - SMB CBYD Account Manager;Private
-Loukas VENTURA;Private - SMB CBYD Account Manager;Private
-Julie MERLAT;Private - SMB CBYD Account Manager;Private
 Alain BORNET;Private - MM & Enterprise Manager;Private
 Robin BURRUS;Private - MM & Enterprise Account Manager;Private
-Yoan LELEU;Private - MM & Enterprise Account Manager;Private
-Thomas MELLET;Private - MM & Enterprise Account Manager;Private
 Mickael Iochem;Private - MM & Enterprise Account Manager;Private
-Jean-Francois ROBERT;Private - MM & Enterprise Account Manager;Private
-TBH AE;Private - MM & Enterprise Account Manager;Private
 Christine EVAIN;Private - Renewals Manager;Private
-Malika TARZOUT;Private - Contractors Renewal Manager;Private
-Mireille GUILLEMINEAU;Private - Contractors Renewal Manager;Private
-Elise MARTINEAU;Private - Contractors Renewal Manager;Private
-Charline QUEFFELEC;Private - Surveyors & Design Offices Renewal Manager;Private
-Marie-Reine FLIPPOT;Private - Surveyors & Design Offices Renewal Manager;Private
 Quentin DECK;Public - ex M&M - Manager;Public
 Simon TONY;Public - ex M&M - Account Manager;Public
-Guillaume CAGNA;Public - ex M&M - Account Manager;Public
-Laetitia TRIGO;Public - ex M&M - Account Manager - Netysis;Public
 Morgane CURIAL;Public - ex M&M - Account Manager;Public
 Pierre-Antoine MARQUAND;Public - ex M&M - Account Manager;Public
 Bryan TUGLER;Public - ex M&M - Account Manager;Public
-Diego PINAUDEAU;Public - ex M&M - Account Manager;Public
-Thibaut DUPONT;Public - ex M&M - Account Manager;Public
 Anissa EL BAHRI;Public - ex M&M - Account Manager;Public
-Margaux LORENTE;Public - ex M&M - Account Manager;Public
-William ILUNGA;Public - ex M&M - Account Manager;Public
-Valentin BRIDE;Public - ex M&M - Account Manager;Public
 Alexandre PENTECOUTEAU;Public - ex M&M - Account Manager;Public
 Marion ANCIAN;Public - ex-CBYD - Manager;Public
 Amandine BORJON-BLIND;Public - ex-CBYD - Account Manager;Public
-Clara SATGER;Public - ex-CBYD - Account Manager;Public
 Amandine DA SILVA;Public - ex-CBYD - Account Manager;Public
 Mounira EL HAFI;Public - ex-CBYD - Account Manager;Public
-Justine TRANCHANT;Public - ex-CBYD - Account Manager;Public
-Remy GOUTALAND;Public - ex-CBYD - Account Manager;Public
 Alexandre JULIA;Public - ex-CBYD - Account Manager;Public
-Zacharia RAMANI;Public - ex-CBYD - Account Manager;Public
-Lea BENEDETTI;Public - ex-CBYD - Account Manager;Public
 Florent TREHET;Public - ex-DIAG - Team Lead;Public
 Arnaud BRIDAY;Public - ex-DIAG - Account Manager;Public
-Pierre-Louis ASSO;Public - ex-DIAG - Account Manager;Public
 Raphael CATHERIN;Public - ex-DIAG - Account Manager;Public
-Mathieu LOUPIAS;Public - ex-DIAG - Account Manager;Public
 Baptiste Pasquier guillard;Public - ex-DIAG - Account Manager;Public
 Aymerick Dechamps-cottin;Public - ex-DIAG - Account Manager;Public
-Julien CAEN;Public - ex-DIAG - Account Manager;Public
-1 MANAGER TBH;Public - Key Account Manager;Public
 Gildas KERNEIS;Public - Key Account - Account Manager;Public
 Tiffany KAAS CHEVALIER;Public - Key Account - Account Manager;Public
-1 KAM TBH;Public - Key Account - Account Manager;Public
 Kelian HOULMIERE;Public - Key Account - Subsidiary Account Manager;Public
 Aurelien Tabard;Public - Key Account - Subsidiary Account Manager;Public
-Margot PRADINES;Public - Key Account - Subsidiary Account Manager;Public
 Mirabelle RAMOND;Public - Renewals - Team Manager;Public
-Beatrice Douine;Public - Renewals Manager;Public
-Camille LEDAIN;Public - Renewals Manager;Public
-Margot MERLET;Public - Renewals Manager;Public
-Nadia Guery;Public - Renewals Manager;Public
-Stephanie REILLER;Public - Renewals Manager;Public
-Clarisse SCATTOLIN;Public - Renewals Manager;Public"""
+Nadia Guery;Public - Renewals Manager;Public"""
+        rows = []
+        for line in _raw.strip().split('\n'):
+            p = line.split(';')
+            if len(p) >= 3:
+                rows.append({'AM_Name': p[0].strip(), 'Role': p[1].strip(), 'Segment': p[2].strip()})
+        org = pd.DataFrame(rows)
 
-def parse_org():
-    rows = []
-    for line in ORG_RAW.strip().split('\n'):
-        p = line.split(';')
-        if len(p)>=3:
-            name,role,seg = p[0].strip(),p[1].strip(),p[2].strip()
-            rows.append({'AM_Name':name,'Role':role,'Segment':seg,
-                         'Is_Manager':'Manager' in role and 'Account Manager' not in role and 'Renewal Manager' not in role,
-                         'Is_Renewal':'Renewal' in role})
-    return pd.DataFrame(rows)
+    org['Is_Manager'] = (org['Role'].str.contains('Manager') &
+                         ~org['Role'].str.contains('Account Manager') &
+                         ~org['Role'].str.contains('Renewal Manager') &
+                         ~org['Role'].str.contains('Team Lead'))
+    org['Is_Renewal'] = org['Role'].str.contains('Renewal')
+    return org
+
+
+import unicodedata, re as _re
+
+def _norm_name(s):
+    """Normalize accents + lowercase for fuzzy matching (ops owner lookup)."""
+    s = str(s).strip().lower()
+    s = ''.join(c for c in unicodedata.normalize('NFD', s) if unicodedata.category(c) != 'Mn')
+    s = _re.sub(r'\s+', ' ', s)
+    return s
 
 ARR_PRODUCTS = {'Infra':'ARR Infra','Topo':'ARR Topo','Elec & Gas':'ARR Elec & Gas',
     'DICT':'ARR DICT','Geo Expertise':'ARR Geo Expertise','Diag':'ARR Diag','Expo':'ARR Expo','Coordin':'ARR Coordin'}
@@ -171,10 +178,27 @@ def load_base():
 df_full, bench_raw = load_base()
 org_df = parse_org()
 
+@st.cache_data
+def load_ops():
+    """Load ops ouvertes - returns (grp per account+owner, total per account)."""
+    try:
+        ops = pd.read_html('./ops_ouvertes.xls', encoding='latin1')[0]
+        ops.columns = ['Owner','Opp_ID','Account_Name','Account_ID','Opp_Name',
+                       'Stage','FY','Currency','Amount','Probability','Age','Close_Date','Create_Date']
+        grp = ops.groupby(['Account_ID','Owner']).size().reset_index(name='n_ops')
+        total = ops.groupby('Account_ID').size().reset_index(name='total_ops')
+        return grp, total
+    except Exception:
+        return pd.DataFrame(columns=['Account_ID','Owner','n_ops']), pd.DataFrame(columns=['Account_ID','total_ops'])
+
+ops_by_acct, ops_total = load_ops()
+
 # =============================================================================
 # SIDEBAR FILTERS
 # =============================================================================
 st.sidebar.title("📊 Sogelink Intelligence")
+st.sidebar.markdown("---")
+page = st.sidebar.radio("Navigation", ["📊 Metrics", "🔄 Réassignation"], label_visibility="collapsed")
 st.sidebar.markdown("---")
 st.sidebar.markdown("### Filtres")
 sel_classif = st.sidebar.multiselect("Classification", sorted(df_full['Classification'].dropna().unique()), default=sorted(df_full['Classification'].dropna().unique()))
@@ -189,98 +213,381 @@ df = df_full[
 st.sidebar.markdown("---")
 st.sidebar.markdown(f"**{len(df):,}** / {len(df_full):,} comptes")
 
+
 # =============================================================================
-# REASSIGNMENT ENGINE
+# REASSIGNMENT ENGINE  (v3 — règles métier complètes)
 # =============================================================================
+
+# ---------------------------------------------------------------------------
+# Old-AM → New-AM mapping  (Règle 1 : conservation si possible)
+# ---------------------------------------------------------------------------
+# Manual mapping: old name (as it appears in base_sogelink) → new canonical name
+# Only AMs who are Account Managers in the new org are mapped.
+# AMs who became Renewal / Manager / left are mapped to None.
+_OLD_NAME_MAP = {
+    # old name (lowercase-ish, as in base)    : new canonical name in org_cible (or None if no longer AM)
+    'Alain Bornet':                None,            # Manager in new org
+    'Albin Hugues':                'Albin HUGUES',
+    'Alexandre Julia':             'Alexandre JULIA',
+    'Alexandre Pentecouteau':      'Alexandre PENTECOUTEAU',
+    'Amandine Borjon-blind':       'Amandine BORJON-BLIND',
+    'Amandine Da Silva':           'Amandine DA SILVA',
+    'Amandine Lannier':            'Amandine LANNIER',
+    'Anissa El bahri':             'Anissa EL BAHRI',
+    'Arnaud Briday':               'Arnaud BRIDAY',
+    'Arnaud Ceresa':               'Arnaud CERESA',
+    'Aurelie Savidan':             'Aurelie SAVIDAN',
+    'Aurélien Tabard':             'Aurélien Tabard',
+    'Aymerick Dechamps-cottin':    'Aymerick Dechamps-cottin',
+    'Baptiste Pasquier guillard':  'Baptiste Pasquier guillard',
+    'Beatrice Demont':             'Beatrice DEMONT',
+    'Bryan Tugler':                'Bryan TUGLER',
+    'Cecile Cherhal':              'Cecile CHERHAL',
+    'Cecile Riahi':                'Cecile RIAHI',
+    'Farès Hamlat':                'Farès Hamlat',
+    'Florence Barjon':             'Florence BARJON',
+    'Karine Roue':                 'Karine ROUE',
+    'Mickaël Iochem':              'Mickaël Iochem',
+    'Morgane Curial':              'Morgane CURIAL',
+    'Mounira El hafi':             'Mounira EL HAFI',
+    'Nadia Guery':                 None,            # Renewal in new org → not an AM anymore
+    'Olivier Kennibol':            None,            # not in new org
+    'Patricia Bizien':             'Patricia BIZIEN',
+    'Pierre-Antoine Marquand':     'Pierre-Antoine MARQUAND',
+    'Pierre-Louis Asso':           'Pierre-Louis ASSO',
+    'Quentin Deck':                'Quentin DECK',
+    'Quentin Trojani':             'Quentin TROJANI',
+    'Raphael Catherin':            'Raphael CATHERIN',
+}
+
+
 def build_am_registry():
+    """Build AM list from new org (org_cible), excluding Managers and Renewal."""
     ams = []
-    for _,r in org_df.iterrows():
-        if r['Is_Manager'] or r['Is_Renewal']: continue
+    for _, r in org_df.iterrows():
+        if r['Is_Manager'] or r['Is_Renewal']:
+            continue
         role = r['Role']
-        ams.append({'name':r['AM_Name'],'role':role,'segment':r['Segment'],
-            'ka':'Key Account' in role, 'mm_ent':'MM & Enterprise' in role,
-            'cbyd':'CBYD' in role or 'ex-CBYD' in role, 'de':'D&E' in role,
-            'diag':'DIAG' in role or 'ex-DIAG' in role, 'mm_pub':'ex M&M' in role,
-            'contractors':'Contractor' in role, 'surveyors':'Surveyor' in role or 'Design Office' in role,
-            'subsidiary':'Subsidiary' in role})
+        ams.append({
+            'name':        r['AM_Name'],
+            'role':        role,
+            'segment':     r['Segment'],       # 'Public' or 'Private'
+            'ka':          'Key Account' in role and 'Subsidiary' not in role,
+            'subsidiary':  'Subsidiary' in role,
+            'mm_ent':      'MM & Enterprise' in role,
+            'cbyd':        'CBYD' in role,
+            'de':          'D&E' in role,
+            'contractors': 'Contractor' in role,
+            'surveyors':   'Surveyor' in role or 'Design Office' in role,
+            'diag':        'DIAG' in role,
+            'mm_pub':      'ex M&M' in role,
+        })
     return ams
 
-def score_am(acct, am, am_load, avg_load):
-    seg = 'Public' if acct['pp']=='PUBLIC' else 'Private'
-    if am['segment']!=seg: return None,[]
-    s,reasons = 0,[]
+# Pre-build registry as a name→dict lookup used during continuity check
+@st.cache_data
+def _am_lookup_by_name():
+    return {a['name']: a for a in build_am_registry()}
+
+
+def _expertise_tag(am):
+    """Canonical expertise bucket for a new-org AM."""
+    if am['ka'] or am['subsidiary']: return 'KA'
+    if am['mm_ent']:                 return 'MM_ENT'
+    if am['diag']:                   return 'DIAG'
+    if am['de'] or am['surveyors'] or am['contractors']: return 'DE'
+    if am['cbyd']:                   return 'CBYD'
+    if am['mm_pub']:                 return 'MM_PUB'
+    return 'OTHER'
+
+
+def _slot_expertise(col):
+    """
+    Expertise required by a slot, inferred from the old-org column.
+    B&S = CBYD  |  D&E = DE  |  M&M = MM_PUB
+    (KA accounts get a KA/MM_ENT preference via classification scoring)
+    """
+    if col == 'D&E': return 'DE'
+    if col == 'M&M': return 'MM_PUB'
+    return 'CBYD'
+
+
+def score_am_auto(acct, am, am_load, avg_load, ops_boost=0):
+    """
+    AUTO-reassignment scoring.
+    Rules applied strictly (Règles 2-6 + ops bonus R7 aussi en auto).
+    Returns (score, reasons) or (None, []) if hard-filtered out.
+    """
+    # R2 — Strict segment filter
+    seg = 'Public' if acct['pp'] == 'PUBLIC' else 'Private'
+    if am['segment'] != seg:
+        return None, []
+
+    s, reasons = 0, []
     cls = acct['cls']
-    if cls in ('Enterprise','Key Account'):
-        if am['ka']: s+=30; reasons.append('KA')
-        elif am['mm_ent']: s+=25; reasons.append('MM/Ent')
-        elif am['mm_pub']: s+=15; reasons.append('M&M Pub')
-        else: s-=10
-    elif cls=='MM':
-        if am['mm_ent']: s+=25; reasons.append('MM')
-        elif am['mm_pub']: s+=20; reasons.append('M&M Pub')
+
+    # R3/R5 — Expertise match (primary lever — must stay on speciality)
+    req_exp = acct.get('required_expertise', '')
+    if req_exp:
+        am_exp = _expertise_tag(am)
+        if am_exp == req_exp:
+            s += 50; reasons.append(f'✓Exp:{req_exp}')
+        else:
+            s -= 40; reasons.append(f'✗Exp({am_exp}≠{req_exp})')
+
+    # Classification fit
+    if cls in ('Enterprise', 'Key Account'):
+        if am['ka']:       s += 40; reasons.append('KA')
+        elif am['mm_ent']: s += 30; reasons.append('MM/Ent')
+        elif am['mm_pub']: s += 15; reasons.append('M&M Pub')
+        else:              s -= 15
+    elif cls == 'MM':
+        if am['mm_ent']:   s += 30; reasons.append('MM/Ent')
+        elif am['mm_pub']: s += 20; reasons.append('M&M Pub')
+        elif am['ka']:     s -= 10
     else:
-        if not am['ka'] and not am['subsidiary']: s+=10; reasons.append('SMB/Tx ok')
-    dom = acct['dom']
-    if dom=='DICT':
-        if am['cbyd']: s+=20; reasons.append('CBYD')
-        elif am['mm_pub']: s+=10
-    elif dom in ('Infra','Topo','Elec','Geo'):
-        if am['de'] or am['surveyors']: s+=20; reasons.append('D&E')
-    elif dom=='Diag':
-        if am['diag']: s+=20; reasons.append('DIAG')
-    elif dom=='Coordin':
-        if am['mm_pub'] or am['cbyd']: s+=15; reasons.append('Coordin')
-    sect = str(acct.get('sect',''))
-    if 'Contractor' in sect and am['contractors']: s+=15; reasons.append('Ind:Contr')
-    elif ('Surveyor' in sect or 'Design' in sect) and (am['surveyors'] or am['de']): s+=15; reasons.append('Ind:Surv/DE')
-    elif 'Local auth' in sect and (am['mm_pub'] or am['cbyd'] or am['diag']): s+=10; reasons.append('Ind:Public')
-    if avg_load>0:
-        if am_load<avg_load: s+=5; reasons.append('↓charge')
-        elif am_load>avg_load*1.3: s-=5; reasons.append('↑charge')
-    if acct['arr']>50000 and (am['mm_ent'] or am['ka']): s+=10; reasons.append('High ARR')
-    return s,reasons
+        if not am['ka'] and not am['subsidiary']:
+            s += 10; reasons.append('SMB/Tx ok')
+        elif am['ka']:
+            s -= 15
+
+    # Domain bonus (when no strict expertise constraint, e.g. accounts without AM)
+    if not req_exp:
+        dom = acct.get('dom', 'None')
+        if dom == 'DICT'   and am['cbyd']:                  s += 25; reasons.append('CBYD')
+        elif dom in ('Infra','Topo','Elec','Geo') and (am['de'] or am['surveyors']): s += 25; reasons.append('D&E')
+        elif dom == 'Diag' and am['diag']:                  s += 25; reasons.append('DIAG')
+        elif dom == 'Coordin' and (am['mm_pub'] or am['cbyd']): s += 15; reasons.append('Coordin')
+
+    # Sector fit
+    sect = str(acct.get('sect', ''))
+    if 'Contractor' in sect and am['contractors']:                         s += 15; reasons.append('Ind:Contr')
+    elif ('Surveyor' in sect or 'Design' in sect) and (am['surveyors'] or am['de']): s += 15; reasons.append('Ind:Surv/DE')
+    elif 'Local auth' in sect and (am['mm_pub'] or am['cbyd'] or am['diag']): s += 10; reasons.append('Ind:Public')
+
+    # R6 — Load balancing (soft, flag only — never blocks)
+    if avg_load > 0:
+        if am_load < avg_load:           s += 5;  reasons.append('↓charge')
+        elif am_load > avg_load * 1.3:   s -= 5;  reasons.append('⚠surcharge')
+
+    # ARR large accounts
+    if acct.get('arr', 0) > 50000 and (am['mm_ent'] or am['ka']):
+        s += 10; reasons.append('High ARR')
+
+    # R7 — Ops ouvertes sur le compte
+    if ops_boost > 0:
+        bonus = min(ops_boost * 3, 20)
+        s += bonus; reasons.append(f'Ops:{ops_boost}')
+
+    return s, reasons
+
+
+def score_am_manual(acct, am, am_load, avg_load, ops_boost=0,
+                    am_arr=0, am_pot=0, am_reste=0, am_ca=0, n_accounts=0):
+    """
+    MANUAL workbench scoring.
+    Adds ops bonus (R7) and portfolio balance indicators (R9).
+    Returns (score, reasons, balance_info).
+    """
+    sc, rea = score_am_auto(acct, am, am_load, avg_load)
+    if sc is None:
+        return None, [], {}
+
+    # R7 — Ops ouvertes sur le compte (manual only)
+    if ops_boost > 0:
+        bonus = min(ops_boost * 5, 25)
+        sc += bonus; rea.append(f'Ops:{ops_boost}')
+
+    # R9 — Portfolio balance info (displayed, not used in score to avoid gaming)
+    balance = {
+        'Comptes': n_accounts,
+        'ARR':     am_arr,
+        'Potentiel': am_pot,
+        'Reste':   am_reste,
+        'CA':      am_ca,
+    }
+
+    return sc, rea, balance
+
 
 @st.cache_data
-def run_auto_reassign(_df_json):
+def build_portfolio_stats(_df_json, _auto_results_json):
+    """
+    Compute per-AM portfolio stats from the auto-reassignment results.
+    Used in the manual workbench to display balance indicators (R9).
+    """
     dfa = pd.read_json(io.StringIO(_df_json))
-    am_reg = build_am_registry()
-    am_load = {a['name']:0 for a in am_reg}
-    for c in ['B&S','D&E','M&M']:
-        if c in dfa.columns:
-            for n in dfa[c].dropna(): am_load[n] = am_load.get(n,0)+1
-    avg = np.mean(list(am_load.values())) if am_load else 100
-    cli = dfa[dfa['Status']=='Client']
-    unasgn = cli[cli[['B&S','D&E','M&M']].isna().all(axis=1)]
+    res = pd.read_json(io.StringIO(_auto_results_json))
+
+    stats = {}  # am_name → {n, arr, pot, reste, ca}
+    for col in ['New_BS', 'New_DE', 'New_MM']:
+        for _, row in res.iterrows():
+            am = row.get(col, '')
+            if not am:
+                continue
+            acct_row = dfa[dfa['Account ID'] == row['Account ID']]
+            if acct_row.empty:
+                continue
+            r = acct_row.iloc[0]
+            if am not in stats:
+                stats[am] = {'n': 0, 'arr': 0, 'pot': 0, 'reste': 0, 'ca': 0}
+            stats[am]['n']     += 1
+            stats[am]['arr']   += float(r.get('ARR Dec 2025', 0) or 0)
+            stats[am]['pot']   += float(r.get('Potentiel', 0) or 0)
+            stats[am]['reste'] += float(r.get('Reste_a_depenser', 0) or 0)
+            stats[am]['ca']    += float(r.get('Chiffre_affaires_annuel', 0) or 0)
+    return stats
+
+
+@st.cache_data
+def run_auto_reassign(_df_json, _ops_json):
+    """
+    Auto-reassignment — Règles 1 à 6 + 8 (strictement, sans ops bonus).
+
+    Pour chaque compte client :
+    R1 — On cherche d'abord à conserver les AM existants s'ils sont dans la
+         nouvelle org AVEC le bon segment.
+    R2 — Filtre dur Public/Privé — aucune exception.
+    R3/R5 — Expertise du slot (B&S→CBYD, D&E→DE, M&M→MM_PUB) conservée.
+    R4/R6 — Surcharge acceptée et flaggée, jamais bloquante.
+    R8 — Pas de bonus ops ici (réservé au manuel).
+    """
+    dfa    = pd.read_json(io.StringIO(_df_json))
+    ops_df = pd.read_json(io.StringIO(_ops_json)) if _ops_json else pd.DataFrame()
+
+    am_reg  = build_am_registry()
+    am_lkup = {a['name']: a for a in am_reg}
+    am_load = {a['name']: 0 for a in am_reg}
+
+    cli = dfa[dfa['Status'] == 'Client'].copy()
+    cli = cli.sort_values('ARR Dec 2025', ascending=False)
+
+    # Build ops lookup: {account_id: {owner_norm: n_ops}}
+    ops_lookup = {}
+    if not ops_df.empty:
+        for _, orow in ops_df.iterrows():
+            aid   = orow['Account_ID']
+            owner = _norm_name(str(orow['Owner']))
+            ops_lookup.setdefault(aid, {})[owner] = ops_lookup.get(aid, {}).get(owner, 0) + int(orow['n_ops'])
+
     results = []
-    for _,row in unasgn.iterrows():
-        acct = {'pp':row.get('Public_Prive',''),'cls':row.get('Classification','SMB'),
-                'dom':row.get('Dom_Product','None'),'sect':row.get('Secteur_activite',''),'arr':row.get('ARR Dec 2025',0)}
-        scored = []
-        for am in am_reg:
-            sc,rea = score_am(acct, am, am_load.get(am['name'],0), avg)
-            if sc is not None: scored.append({'am':am['name'],'role':am['role'],'score':sc,'reasons':' | '.join(rea[:4])})
-        scored.sort(key=lambda x:x['score'], reverse=True)
-        best = scored[0] if scored else None
+
+    for _, row in cli.iterrows():
+        acct_id = row['Account ID']
+        pp      = str(row.get('Public_Prive', ''))
+        cls     = str(row.get('Classification', 'SMB'))
+        dom     = str(row.get('Dom_Product', 'None'))
+        sect    = str(row.get('Secteur_activite', ''))
+        arr_val = float(row.get('ARR Dec 2025', 0) or 0)
+        acct_seg = 'Public' if pp == 'PUBLIC' else 'Private'
+
+        # ── Determine slots ──────────────────────────────────────────────
+        old_slot_map = {}  # col → old AM name (may be None if empty)
+        for col in ['B&S', 'D&E', 'M&M']:
+            val = row.get(col)
+            if pd.notna(val) and str(val).strip():
+                old_slot_map[col] = str(val).strip()
+
+        slots = list(old_slot_map.keys()) if old_slot_map else ['B&S']
+
+        # Dynamic avg load
+        loads_vals = list(am_load.values())
+        avg_load = np.mean(loads_vals) if any(v > 0 for v in loads_vals) else 100
+
+        acct_ops = ops_lookup.get(acct_id, {})
+        new_slots  = {}
+        slot_notes = {}
+        continuity_flags = {}
+
+        for col in slots:
+            exp_needed = _slot_expertise(col)
+            already    = set(new_slots.values())
+            old_am     = old_slot_map.get(col)
+
+            # ── R1 : try to keep the old AM ──────────────────────────────
+            kept = False
+            if old_am:
+                new_name = _OLD_NAME_MAP.get(old_am)  # None if not in new org or left
+                if new_name and new_name in am_lkup:
+                    am_info = am_lkup[new_name]
+                    # R2 check: same segment?
+                    if am_info['segment'] == acct_seg and new_name not in already:
+                        new_slots[col]          = new_name
+                        slot_notes[col]         = f'✓Conservé: {new_name}'
+                        continuity_flags[col]   = 'kept'
+                        am_load[new_name]        = am_load.get(new_name, 0) + 1
+                        kept = True
+                    # else: AM changed segment → must replace (falls through to scoring)
+
+            # ── Score for replacement / new assignment ───────────────────
+            if not kept:
+                acct_ctx = {
+                    'pp': pp, 'cls': cls, 'dom': dom, 'sect': sect, 'arr': arr_val,
+                    'required_expertise': exp_needed,
+                }
+                scored = []
+                for am in am_reg:
+                    if am['name'] in already:
+                        continue
+                    ops_boost = acct_ops.get(_norm_name(am['name']), 0)
+                    sc, rea = score_am_auto(acct_ctx, am, am_load.get(am['name'], 0), avg_load, ops_boost)
+                    if sc is not None:
+                        scored.append({'am': am['name'], 'role': am['role'],
+                                       'score': sc, 'reasons': ' | '.join(rea[:5])})
+                scored.sort(key=lambda x: x['score'], reverse=True)
+
+                if scored:
+                    best = scored[0]
+                    new_slots[col]         = best['am']
+                    reason_prefix = '↺Remplacé' if old_am else '★Nouveau'
+                    slot_notes[col]        = f'{reason_prefix}: {best["am"]} (exp:{exp_needed}, sc:{best["score"]:.0f})'
+                    continuity_flags[col]  = 'replaced' if old_am else 'new'
+                    am_load[best['am']]    = am_load.get(best['am'], 0) + 1
+                else:
+                    new_slots[col]         = ''
+                    slot_notes[col]        = f'⚠️ Aucun AM {exp_needed} {acct_seg}'
+                    continuity_flags[col]  = 'missing'
+
+        # ── Overload flag ────────────────────────────────────────────────
+        avg_now    = np.mean(list(am_load.values())) or 1
+        overloaded = [n for n in new_slots.values()
+                      if n and am_load.get(n, 0) > avg_now * 1.5]
+
+        n_kept     = sum(1 for v in continuity_flags.values() if v == 'kept')
+        n_replaced = sum(1 for v in continuity_flags.values() if v == 'replaced')
+
         results.append({
-            'Account ID':row['Account ID'],'Account Name':row['Account Name'],
-            'Classification':row['Classification'],'Public_Prive':row['Public_Prive'],
-            'Team':row.get('FR_Sogelink_Team',''),'Secteur':row.get('Secteur_activite',''),
-            'ARR':row['ARR Dec 2025'],'Dom_Product':acct['dom'],
-            'Reco_AM':best['am'] if best else '','Reco_Role':best['role'] if best else '',
-            'Score':best['score'] if best else 0,'Raisons':best['reasons'] if best else '',
+            'Account ID':     acct_id,
+            'Account Name':   row['Account Name'],
+            'Classification': cls,
+            'Public_Prive':   pp,
+            'Team':           str(row.get('FR_Sogelink_Team', '')),
+            'Secteur':        sect,
+            'ARR':            arr_val,
+            'Dom_Product':    dom,
+            'Old_BS':         str(old_slot_map.get('B&S', '')),
+            'Old_DE':         str(old_slot_map.get('D&E', '')),
+            'Old_MM':         str(old_slot_map.get('M&M', '')),
+            'New_BS':         new_slots.get('B&S', ''),
+            'New_DE':         new_slots.get('D&E', ''),
+            'New_MM':         new_slots.get('M&M', ''),
+            'AM_Conservés':   n_kept,
+            'AM_Remplacés':   n_replaced,
+            'Notes':          ' | '.join(v for v in slot_notes.values() if v),
+            'Overload_Flag':  ', '.join(overloaded) if overloaded else '',
         })
-        if best: am_load[best['am']] = am_load.get(best['am'],0)+1
+
     return pd.DataFrame(results), am_load
 
 # =============================================================================
 # TABS
 # =============================================================================
-tab1, tab2 = st.tabs(["📊 Metrics", "🔄 Réassignation"])
+
 
 # =============================================================================
 # TAB 1: METRICS
 # =============================================================================
-with tab1:
+if page == "📊 Metrics":
     st.title("📊 Vue commerciale Sogelink")
 
     # ── KPIs ──
@@ -505,7 +812,7 @@ with tab1:
 # =============================================================================
 # TAB 2: RÉASSIGNATION
 # =============================================================================
-with tab2:
+if page == "🔄 Réassignation":
     st.title("🔄 Réassignation des comptes")
 
     # Session state
@@ -571,27 +878,28 @@ with tab2:
         # Run auto reassignment
         st.subheader("🚀 Lancer la réassignation automatique")
         st.markdown("""
-        L'algorithme affecte chaque compte **non assigné** au meilleur AM disponible selon :
-        - **Segment** : Public → AM Public, Privé → AM Privé (filtre dur)
-        - **Classification** : Enterprise/KA → AM KA ou MM/Ent, SMB → AM CBYD/D&E
-        - **Produit dominant** : DICT → CBYD, Infra/Topo → D&E, Diag → DIAG
-        - **Secteur** : Contractors → AM Contractors, Surveyors → AM Surveyors
-        - **Équilibrage** : préférence aux AM moins chargés
+        L'algorithme applique les règles métier dans l'ordre de priorité suivant :
+        1. **R1 — Continuité** : si l'ancien AM existe dans la nouvelle org avec le bon segment → conservé
+        2. **R2 — Segment strict** : Public → AM Public, Privé → AM Privé (aucune exception)
+        3. **R3/R5 — Expertise produit** : remplacement par même expertise (B&S→CBYD, D&E→D&E, M&M→M&M Pub)
+        4. **R4/R6 — Surcharge acceptée** : flaggée ⚠️ si > 150% moyenne, jamais bloquante
+        5. **R7 — Bonus ops** : AM avec opportunités ouvertes sur le compte favorisé (+3 pts/op, max +20)
         """)
 
         col_run, col_info = st.columns([1, 2])
         with col_run:
             run_auto = st.button("🚀 Lancer", type="primary", key="run_auto")
         with col_info:
-            st.info(f"Va réassigner **{len(no_am):,}** clients sans AM")
+            cli_total = df_full[df_full['Status'] == 'Client']
+            st.info(f"Traitement de **{len(cli_total):,}** clients")
 
         if run_auto:
             with st.spinner("Calcul en cours..."):
-                result_df, new_loads = run_auto_reassign(df_full.to_json())
-
+                ops_json = ops_by_acct.to_json() if not ops_by_acct.empty else ''
+                result_df, new_loads = run_auto_reassign(df_full.to_json(), ops_json)
             st.session_state.auto_results = result_df
             st.session_state.auto_loads = new_loads
-            st.success(f"✅ {len(result_df)} comptes réassignés !")
+            st.success(f"✅ {len(result_df):,} comptes traités !")
 
         # Display results
         if 'auto_results' in st.session_state and st.session_state.auto_results is not None:
@@ -601,34 +909,54 @@ with tab2:
             st.subheader("Résultats de la réassignation automatique")
 
             # KPIs
-            rc1, rc2, rc3, rc4 = st.columns(4)
-            rc1.metric("Comptes réassignés", f"{len(res):,}")
-            rc2.metric("ARR réassigné", f"{res['ARR'].sum()/1e6:.1f} M€")
-            rc3.metric("Score moyen", f"{res['Score'].mean():.1f}")
-            rc4.metric("AMs utilisés", f"{res['Reco_AM'].nunique()}")
+            rc1, rc2, rc3, rc4, rc5 = st.columns(5)
+            rc1.metric("Comptes traités", f"{len(res):,}")
+            rc2.metric("ARR couvert", f"{res['ARR'].sum()/1e6:.1f} M€")
+            n_kept_total = res['AM_Conservés'].sum()
+            n_replaced_total = res['AM_Remplacés'].sum()
+            rc3.metric("✓ AM conservés", f"{n_kept_total:,}")
+            rc4.metric("↺ AM remplacés", f"{n_replaced_total:,}")
+            n_overload = res[res['Overload_Flag'] != '']['Account ID'].nunique()
+            rc5.metric("⚠️ Comptes surchargés", f"{n_overload:,}")
 
-            # New load distribution
-            st.markdown("**Nouvelle charge par AM recommandé :**")
-            new_load_df = res.groupby('Reco_AM').agg(
-                n_new=('Account ID', 'count'),
-                arr_new=('ARR', 'sum'),
-                score_avg=('Score', 'mean'),
-            ).reset_index().sort_values('arr_new', ascending=False)
+            # Load distribution
+            st.markdown("**Charge nouvelle par AM :**")
+            load_rows = []
+            for am_name, cnt in sorted(st.session_state.auto_loads.items(), key=lambda x: -x[1]):
+                if cnt > 0:
+                    am_info = next((a for a in build_am_registry() if a['name'] == am_name), {})
+                    avg_ = np.mean(list(st.session_state.auto_loads.values()))
+                    flag = '⚠️ SURCHARGÉ' if cnt > avg_ * 1.5 else ('↑ élevé' if cnt > avg_ * 1.3 else '')
+                    load_rows.append({'AM': am_name, 'Role': am_info.get('role',''), 
+                                      'Segment': am_info.get('segment',''),
+                                      'Comptes': cnt, 'Flag': flag})
+            load_df = pd.DataFrame(load_rows)
+            avg_load_val = load_df['Comptes'].mean() if not load_df.empty else 0
 
-            st.dataframe(new_load_df, use_container_width=True, hide_index=True,
-                         column_config={
-                             'Reco_AM': 'AM recommandé',
-                             'n_new': st.column_config.NumberColumn('Nouveaux comptes', format="%d"),
-                             'arr_new': st.column_config.NumberColumn('ARR ajouté', format="%.0f €"),
-                             'score_avg': st.column_config.NumberColumn('Score moyen', format="%.1f"),
-                         })
+            cL_ld, cR_ld = st.columns([2, 3])
+            with cL_ld:
+                st.dataframe(load_df, use_container_width=True, hide_index=True,
+                             column_config={
+                                 'Comptes': st.column_config.NumberColumn(format="%d"),
+                             })
+            with cR_ld:
+                if not load_df.empty:
+                    colors = ['#ef4444' if '⚠️' in str(r['Flag']) else '#f59e0b' if '↑' in str(r['Flag']) else '#2F5496'
+                              for _, r in load_df.iterrows()]
+                    fig_ld = go.Figure(go.Bar(
+                        x=load_df['AM'], y=load_df['Comptes'], marker_color=colors,
+                        text=load_df['Flag'], textposition='outside',
+                    ))
+                    fig_ld.add_hline(y=avg_load_val, line_dash='dash', line_color='#94a3b8',
+                                     annotation_text=f'Moy: {avg_load_val:.0f}')
+                    fig_ld.update_layout(height=420, xaxis_tickangle=45)
+                    st.plotly_chart(fig_ld, use_container_width=True)
 
             # Results table with filters
             st.markdown("---")
-            st.markdown("**Détail des affectations :**")
+            st.markdown("**Détail par compte :**")
 
-            # Filters
-            fcl1, fcl2, fcl3 = st.columns(3)
+            fcl1, fcl2, fcl3, fcl4 = st.columns(4)
             with fcl1:
                 f_team = st.multiselect("Team", res['Team'].dropna().unique().tolist(),
                                         default=res['Team'].dropna().unique().tolist(), key='auto_f_team')
@@ -636,53 +964,57 @@ with tab2:
                 f_cls = st.multiselect("Classification", res['Classification'].dropna().unique().tolist(),
                                        default=res['Classification'].dropna().unique().tolist(), key='auto_f_cls')
             with fcl3:
-                f_sort = st.selectbox("Trier par", ['ARR ↓', 'Score ↓', 'AM recommandé'], key='auto_sort')
+                f_overload = st.checkbox("⚠️ Surchargés seulement", key='auto_overload')
+            with fcl4:
+                f_sort = st.selectbox("Trier par", ['ARR ↓', 'Account Name'], key='auto_sort')
 
             res_filt = res[(res['Team'].isin(f_team)) & (res['Classification'].isin(f_cls))]
+            if f_overload:
+                res_filt = res_filt[res_filt['Overload_Flag'] != '']
             if f_sort == 'ARR ↓':
                 res_filt = res_filt.sort_values('ARR', ascending=False)
-            elif f_sort == 'Score ↓':
-                res_filt = res_filt.sort_values('Score', ascending=False)
             else:
-                res_filt = res_filt.sort_values('Reco_AM')
+                res_filt = res_filt.sort_values('Account Name')
 
-            st.dataframe(res_filt.head(100), use_container_width=True, hide_index=True,
+            display_cols = ['Account Name', 'Classification', 'Public_Prive', 'Dom_Product',
+                            'New_BS', 'New_DE', 'New_MM', 'ARR', 'Notes', 'Overload_Flag']
+            st.dataframe(res_filt[display_cols].head(200), use_container_width=True, hide_index=True,
                          column_config={
-                             'Account ID': None,
-                             'Account Name': 'Compte',
-                             'Classification': 'Class.',
-                             'Public_Prive': 'Pub/Priv',
-                             'Team': 'Team',
-                             'Secteur': 'Secteur',
-                             'ARR': st.column_config.NumberColumn('ARR', format="%.0f €"),
-                             'Dom_Product': 'Produit dom.',
-                             'Reco_AM': 'AM recommandé',
-                             'Reco_Role': 'Rôle AM',
-                             'Score': st.column_config.NumberColumn('Score', format="%.0f"),
-                             'Raisons': 'Raisons',
+                             'Account Name':  'Compte',
+                             'Classification':'Class.',
+                             'Public_Prive':  'Pub/Priv',
+                             'Dom_Product':   'Produit dom.',
+                             'New_BS':        'B&S (cible)',
+                             'New_DE':        'D&E (cible)',
+                             'New_MM':        'M&M (cible)',
+                             'ARR':           st.column_config.NumberColumn('ARR', format="%.0f €"),
+                             'Notes':         'Notes',
+                             'Overload_Flag': '⚠️ Surcharge',
                          })
 
-            # Accept all auto → push to decisions
+            # Export
             st.markdown("---")
             ca1, ca2 = st.columns(2)
             with ca1:
                 if st.button("✅ Accepter toutes les réassignations auto", type="primary", key="accept_all"):
                     for _, row in res.iterrows():
-                        st.session_state.decisions[row['Account ID']] = {
-                            'new_owner': row['Reco_AM'],
-                            'method': 'auto',
-                            'old_owner': 'Non assigné',
-                            'arr': row['ARR'],
-                            'account_name': row['Account Name'],
-                        }
-                    st.success(f"✅ {len(res)} décisions enregistrées")
+                        for slot, col_key in [('New_BS','B&S'), ('New_DE','D&E'), ('New_MM','M&M')]:
+                            new_am = row.get(slot, '')
+                            if new_am:
+                                aid = f"{row['Account ID']}_{col_key}"
+                                st.session_state.decisions[aid] = {
+                                    'new_owner': new_am, 'method': 'auto',
+                                    'old_owner': str(row.get(col_key.replace('New_',''), '')),
+                                    'arr': row['ARR'], 'account_name': row['Account Name'],
+                                    'slot': col_key,
+                                }
+                    st.success(f"✅ Décisions enregistrées")
                     st.rerun()
             with ca2:
-                # Export auto results
                 buf_auto = io.BytesIO()
                 with pd.ExcelWriter(buf_auto, engine='openpyxl') as w:
                     res.to_excel(w, sheet_name='Reassignation_Auto', index=False)
-                    new_load_df.to_excel(w, sheet_name='Charge_AM', index=False)
+                    load_df.to_excel(w, sheet_name='Charge_AM', index=False)
                 st.download_button("📊 Exporter résultats", data=buf_auto.getvalue(),
                                    file_name="reassignation_auto.xlsx",
                                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
@@ -696,12 +1028,12 @@ with tab2:
 
         # Select scope
         scope = st.radio("Scope", [
-            'Clients sans AM (non encore décidés)',
-            'Tous les clients (révision possible)',
+            'Tous les clients',
+            'Clients sans AM seulement',
         ], horizontal=True, key='wb_scope')
 
-        if scope == 'Clients sans AM (non encore décidés)':
-            wb_base = no_am[~no_am['Account ID'].isin(st.session_state.decisions)]
+        if scope == 'Clients sans AM seulement':
+            wb_base = no_am.copy()
         else:
             wb_base = cli_all.copy()
 
@@ -737,99 +1069,163 @@ with tab2:
         cur_pg = st.number_input("Page", min_value=1, max_value=total_pg, value=1, key='wb_pg')
         pg_df = wb_filt.iloc[(cur_pg-1)*pg_size : cur_pg*pg_size]
 
-        # AM list for manual selection
         am_reg = build_am_registry()
-        am_names = [a['name'] for a in am_reg]
+
+        # Load is computed on the NEW org after auto-reassign if available,
+        # otherwise initialise to zero (workbench is for manual decisions).
+        if 'auto_loads' in st.session_state:
+            cur_loads = dict(st.session_state.auto_loads)
+        else:
+            cur_loads = {a['name']: 0 for a in am_reg}
+        avg_ld = np.mean(list(cur_loads.values())) if any(v > 0 for v in cur_loads.values()) else 100
 
         # Display account cards
         for _, row in pg_df.iterrows():
             acct_id = row['Account ID']
-            decided = acct_id in st.session_state.decisions
+            decided = any(k.startswith(acct_id) for k in st.session_state.decisions)
             icon = "✅" if decided else "⚠️"
 
-            current_ams = []
+            # Current AM slots
+            existing_slots = {}
             for c in ['B&S', 'D&E', 'M&M']:
                 if pd.notna(row.get(c)):
-                    current_ams.append(f"{c}: {row[c]}")
-            current_str = ' | '.join(current_ams) if current_ams else 'Aucun'
+                    existing_slots[c] = row[c]
+
+            slot_summary = ' | '.join(f"{c}: {v}" for c, v in existing_slots.items()) if existing_slots else 'Aucun'
 
             with st.expander(
                 f"{icon} **{row['Account Name']}** — {row['ARR Dec 2025']:,.0f}€ | "
-                f"{row.get('Classification', '')} | {row.get('Secteur_activite', '')}",
+                f"{row.get('Classification', '')} | {row.get('Public_Prive','')} | {row.get('Secteur_activite', '')}",
                 expanded=not decided
             ):
-                # Account info
                 ci1, ci2, ci3, ci4 = st.columns(4)
-                ci1.markdown(f"**AM actuels:** {current_str}")
-                ci2.markdown(f"**Segment:** {row.get('Public_Prive', '?')}")
-                ci3.markdown(f"**Produit dom.:** {row.get('Dom_Product', '?')}")
-                ci4.markdown(f"**Parent:** {row.get('Ultimate_Parent', '—')}")
+                ci1.markdown(f"**AM actuels:** {slot_summary}")
+                ci2.markdown(f"**Produit dom.:** {row.get('Dom_Product', '?')}")
+                ci3.markdown(f"**Ops ouvertes:** {ops_total[ops_total['Account_ID']==acct_id]['total_ops'].sum():.0f}")
+                ci4.markdown(f"**Groupe:** {row.get('Ultimate_Parent', '—')}")
 
-                # Score candidates
-                acct = {
-                    'pp': row.get('Public_Prive', ''),
-                    'cls': row.get('Classification', 'SMB'),
-                    'dom': row.get('Dom_Product', 'None'),
-                    'sect': row.get('Secteur_activite', ''),
-                    'arr': row.get('ARR Dec 2025', 0),
-                }
+                pp   = row.get('Public_Prive', '')
+                cls  = row.get('Classification', 'SMB')
+                dom  = row.get('Dom_Product', 'None')
+                sect = row.get('Secteur_activite', '')
+                arr_v = row.get('ARR Dec 2025', 0)
 
-                # Compute current loads
-                cur_loads = {a['name']: 0 for a in am_reg}
-                for c in ['B&S', 'D&E', 'M&M']:
-                    for n in cli_all[c].dropna():
-                        cur_loads[n] = cur_loads.get(n, 0) + 1
-                avg_ld = np.mean(list(cur_loads.values())) if cur_loads else 100
+                # Ops for this account (R7)
+                acct_ops = ops_by_acct[ops_by_acct['Account_ID'] == acct_id] if not ops_by_acct.empty else pd.DataFrame()
+                ops_dict = {_norm_name(r['Owner']): int(r['n_ops']) for _, r in acct_ops.iterrows()} if not acct_ops.empty else {}
 
-                scored = []
-                for am in am_reg:
-                    sc, rea = score_am(acct, am, cur_loads.get(am['name'], 0), avg_ld)
-                    if sc is not None:
-                        scored.append({'AM': am['name'], 'Role': am['role'], 'Score': sc,
-                                       'Raisons': ' | '.join(rea[:4]), 'Charge': cur_loads.get(am['name'], 0)})
-                scored.sort(key=lambda x: x['Score'], reverse=True)
-                top5 = scored[:5]
+                # Portfolio stats for balance display (R9)
+                port_stats = {}
+                if 'auto_results' in st.session_state and st.session_state.auto_results is not None:
+                    port_stats = build_portfolio_stats(
+                        df_full.to_json(),
+                        st.session_state.auto_results.to_json()
+                    )
 
-                if top5:
-                    st.dataframe(pd.DataFrame(top5), use_container_width=True, hide_index=True,
-                                 column_config={
-                                     'Score': st.column_config.NumberColumn(format="%.0f"),
-                                     'Charge': st.column_config.NumberColumn(format="%d"),
-                                 })
+                # Per slot
+                slots_to_show = list(existing_slots.keys()) if existing_slots else ['B&S']
+                for col in slots_to_show:
+                    old_am = existing_slots.get(col, None)
+                    # Show auto-reassign result for this slot if available
+                    auto_reco = ''
+                    if 'auto_results' in st.session_state and st.session_state.auto_results is not None:
+                        auto_row = st.session_state.auto_results[
+                            st.session_state.auto_results['Account ID'] == acct_id
+                        ]
+                        if not auto_row.empty:
+                            col_map = {'B&S': 'New_BS', 'D&E': 'New_DE', 'M&M': 'New_MM'}
+                            auto_reco = auto_row.iloc[0].get(col_map.get(col, ''), '')
 
-                    cd1, cd2, cd3 = st.columns([2, 2, 1])
-                    with cd1:
-                        choice = st.selectbox(
-                            "Assigner à",
-                            [f"#{i+1} — {c['AM']} (score {c['Score']:.0f})" for i, c in enumerate(top5)]
-                            + ["Autre (manuel)"],
-                            key=f"ch_{acct_id}",
+                    st.markdown(
+                        f"**Slot {col}** — ancienne org: `{old_am or 'non assigné'}` "
+                        f"| auto-reco: `{auto_reco or '—'}`"
+                    )
+
+                    exp_needed = _slot_expertise(col)
+                    acct_ctx = {
+                        'pp': pp, 'cls': cls, 'dom': dom, 'sect': sect, 'arr': arr_v,
+                        'required_expertise': exp_needed,
+                    }
+
+                    # Score all AMs with ops bonus + portfolio balance (R7, R9)
+                    scored = []
+                    for am in am_reg:
+                        ops_boost  = ops_dict.get(_norm_name(am['name']), 0)
+                        ps         = port_stats.get(am['name'], {})
+                        sc, rea, bal = score_am_manual(
+                            acct_ctx, am,
+                            cur_loads.get(am['name'], 0), avg_ld,
+                            ops_boost=ops_boost,
+                            am_arr=ps.get('arr', 0),
+                            am_pot=ps.get('pot', 0),
+                            am_reste=ps.get('reste', 0),
+                            am_ca=ps.get('ca', 0),
+                            n_accounts=ps.get('n', 0),
                         )
-                    with cd2:
-                        manual_am = None
-                        if choice == "Autre (manuel)":
-                            # Filter AM names by matching segment
-                            seg = 'Public' if row.get('Public_Prive') == 'PUBLIC' else 'Private'
-                            seg_ams = [a['name'] for a in am_reg if a['segment'] == seg]
-                            manual_am = st.selectbox("AM", seg_ams, key=f"man_{acct_id}")
-                    with cd3:
-                        if st.button("✅ Valider", key=f"val_{acct_id}"):
-                            if choice == "Autre (manuel)" and manual_am:
-                                new_owner = manual_am
-                                method = 'manual'
-                            else:
-                                idx = int(choice.split('#')[1].split(' ')[0]) - 1
-                                new_owner = top5[idx]['AM']
-                                method = 'auto'
-                            st.session_state.decisions[acct_id] = {
-                                'new_owner': new_owner, 'method': method,
-                                'old_owner': current_str,
-                                'arr': row['ARR Dec 2025'],
-                                'account_name': row['Account Name'],
-                            }
-                            st.rerun()
-                else:
-                    st.warning("Aucun AM compatible (segment mismatch)")
+                        if sc is not None:
+                            scored.append({
+                                'AM':           am['name'],
+                                'Rôle':         am['role'],
+                                'Score':        sc,
+                                'Raisons':      ' | '.join(rea[:5]),
+                                'Charge':       cur_loads.get(am['name'], 0),
+                                'Ops/compte':   ops_boost,
+                                # R9 portfolio balance indicators
+                                'Port. Comptes': bal.get('Comptes', 0),
+                                'Port. ARR':    bal.get('ARR', 0),
+                                'Port. Potentiel': bal.get('Potentiel', 0),
+                                'Port. Reste':  bal.get('Reste', 0),
+                                'Port. CA':     bal.get('CA', 0),
+                            })
+                    scored.sort(key=lambda x: x['Score'], reverse=True)
+                    top5 = scored[:5]
+
+                    if top5:
+                        st.dataframe(pd.DataFrame(top5), use_container_width=True, hide_index=True,
+                                     column_config={
+                                         'Score':    st.column_config.NumberColumn(format="%.0f"),
+                                         'Charge':   st.column_config.NumberColumn(format="%d"),
+                                         'Ops/compte': st.column_config.NumberColumn(format="%d"),
+                                         'Port. Comptes': st.column_config.NumberColumn('📋 Comptes', format="%d"),
+                                         'Port. ARR': st.column_config.NumberColumn('💰 ARR', format="%.0f €"),
+                                         'Port. Potentiel': st.column_config.NumberColumn('📈 Potentiel', format="%.0f €"),
+                                         'Port. Reste': st.column_config.NumberColumn('🎯 Reste', format="%.0f €"),
+                                         'Port. CA': st.column_config.NumberColumn('🏢 CA clients', format="%.0f €"),
+                                     })
+
+                        slot_key = f"{acct_id}_{col}"
+                        cd1, cd2, cd3 = st.columns([2, 2, 1])
+                        with cd1:
+                            choice = st.selectbox(
+                                f"Assigner slot {col}",
+                                [f"#{i+1} — {c['AM']} (sc {c['Score']:.0f})" for i, c in enumerate(top5)]
+                                + ["Autre (manuel)"],
+                                key=f"ch_{slot_key}",
+                            )
+                        with cd2:
+                            manual_am = None
+                            if choice == "Autre (manuel)":
+                                seg = 'Public' if pp == 'PUBLIC' else 'Private'
+                                seg_ams = [a['name'] for a in am_reg if a['segment'] == seg]
+                                manual_am = st.selectbox("AM", seg_ams, key=f"man_{slot_key}")
+                        with cd3:
+                            if st.button("✅ Valider", key=f"val_{slot_key}"):
+                                if choice == "Autre (manuel)" and manual_am:
+                                    new_owner = manual_am
+                                    method = 'manual'
+                                else:
+                                    idx = int(choice.split('#')[1].split(' ')[0]) - 1
+                                    new_owner = top5[idx]['AM']
+                                    method = 'workbench'
+                                st.session_state.decisions[slot_key] = {
+                                    'new_owner': new_owner, 'method': method,
+                                    'old_owner': old_am or 'Aucun',
+                                    'arr': arr_v, 'account_name': row['Account Name'],
+                                    'slot': col,
+                                }
+                                st.rerun()
+                    else:
+                        st.warning(f"Aucun AM compatible pour le slot {col} (segment {pp})")
 
         # Bulk actions
         st.markdown("---")
@@ -837,31 +1233,33 @@ with tab2:
         with bk1:
             if st.button("🚀 Accepter tous les #1 de cette page", type="primary", key="bulk_page"):
                 for _, row in pg_df.iterrows():
-                    aid = row['Account ID']
-                    if aid in st.session_state.decisions:
-                        continue
-                    acct = {'pp': row.get('Public_Prive', ''), 'cls': row.get('Classification', 'SMB'),
-                            'dom': row.get('Dom_Product', 'None'), 'sect': row.get('Secteur_activite', ''),
-                            'arr': row.get('ARR Dec 2025', 0)}
-                    cur_loads2 = {a['name']: 0 for a in am_reg}
-                    for c in ['B&S', 'D&E', 'M&M']:
-                        for n in cli_all[c].dropna():
-                            cur_loads2[n] = cur_loads2.get(n, 0) + 1
-                    avg2 = np.mean(list(cur_loads2.values())) if cur_loads2 else 100
-                    best, best_sc = None, -999
-                    for am in am_reg:
-                        sc, _ = score_am(acct, am, cur_loads2.get(am['name'], 0), avg2)
-                        if sc is not None and sc > best_sc:
-                            best_sc = sc; best = am['name']
-                    if best:
-                        current_ams2 = []
-                        for c in ['B&S', 'D&E', 'M&M']:
-                            if pd.notna(row.get(c)): current_ams2.append(f"{c}: {row[c]}")
-                        st.session_state.decisions[aid] = {
-                            'new_owner': best, 'method': 'auto_bulk',
-                            'old_owner': ' | '.join(current_ams2) if current_ams2 else 'Aucun',
-                            'arr': row['ARR Dec 2025'], 'account_name': row['Account Name'],
-                        }
+                    acct_id = row['Account ID']
+                    pp   = row.get('Public_Prive', '')
+                    cls  = row.get('Classification', 'SMB')
+                    dom  = row.get('Dom_Product', 'None')
+                    sect = row.get('Secteur_activite', '')
+                    arr_v = row.get('ARR Dec 2025', 0)
+                    existing = {c: row[c] for c in ['B&S','D&E','M&M'] if pd.notna(row.get(c))}
+                    slots = list(existing.keys()) if existing else ['B&S']
+                    for col in slots:
+                        slot_key = f"{acct_id}_{col}"
+                        if slot_key in st.session_state.decisions:
+                            continue
+                        exp = _slot_expertise(col)
+                        acct_ctx = {'pp': pp, 'cls': cls, 'dom': dom, 'sect': sect, 'arr': arr_v, 'required_expertise': exp}
+                        scored2 = []
+                        for am in am_reg:
+                            sc, _ = score_am_auto(acct_ctx, am, cur_loads.get(am['name'], 0), avg_ld)
+                            if sc is not None:
+                                scored2.append({'am': am['name'], 'score': sc})
+                        scored2.sort(key=lambda x: x['score'], reverse=True)
+                        if scored2:
+                            best = scored2[0]
+                            st.session_state.decisions[slot_key] = {
+                                'new_owner': best['am'], 'method': 'auto_bulk',
+                                'old_owner': existing.get(col, 'Aucun'),
+                                'arr': arr_v, 'account_name': row['Account Name'], 'slot': col,
+                            }
                 st.rerun()
         with bk2:
             if st.button("🗑️ Réinitialiser les décisions", key="reset_all"):
